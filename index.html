@@ -97,6 +97,7 @@
 </head>
 <body>
 
+<!--
 <div id="auth-gate" class="auth-gate">
   <div class="auth-box">
     <h2>Claude Code Hackathon</h2>
@@ -106,8 +107,9 @@
     <div class="auth-error" id="auth-error">Incorrect password. Try again.</div>
   </div>
 </div>
+-->
 
-<div id="app" style="display:none">
+<div id="app">
 <div class="disclaimer">This is an unofficial community tool. Not endorsed by or affiliated with Cerebral Valley or Anthropic.</div>
 <div class="header">
   <div class="header-left">
@@ -416,35 +418,7 @@ function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-// Auth gate
-const HASH = '7248dcf53ff893446699e501ee1aec2b9fdd982883fb250e2e88204eb8456311';
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function unlock(pw) {
-  const h = await sha256(pw);
-  if (h === HASH) {
-    sessionStorage.setItem('authed', '1');
-    document.getElementById('auth-gate').style.display = 'none';
-    document.getElementById('app').style.display = '';
-    loadData();
-  } else {
-    document.getElementById('auth-error').style.display = 'block';
-    document.getElementById('auth-input').select();
-  }
-}
-
-document.getElementById('auth-btn').addEventListener('click', () => unlock(document.getElementById('auth-input').value));
-document.getElementById('auth-input').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(e.target.value); });
-
-if (sessionStorage.getItem('authed') === '1') {
-  document.getElementById('auth-gate').style.display = 'none';
-  document.getElementById('app').style.display = '';
-  loadData();
-}
+loadData();
 </script>
 </div>
 </body>
