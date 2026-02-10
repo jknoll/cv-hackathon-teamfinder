@@ -16,10 +16,13 @@
   a:hover { text-decoration: underline; }
 
   .disclaimer { background: #f0883e22; border-bottom: 1px solid #f0883e55; padding: 8px 24px; text-align: center; font-size: 13px; color: #f0883e; }
-  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; z-index: 100; }
-  .header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-  .header h1 span.count { background: var(--accent-dim); color: var(--accent); font-size: 13px; padding: 2px 8px; border-radius: 12px; }
-  .header .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .header-left { flex: 1; min-width: 0; }
+  .header-left h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .header-left h1 span.count { background: var(--accent-dim); color: var(--accent); font-size: 13px; padding: 2px 8px; border-radius: 12px; }
+  .header-left .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+  .minimap { width: 340px; height: 170px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; flex-shrink: 0; overflow: hidden; }
+  .minimap svg { display: block; }
 
   .controls { padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .search { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 14px; outline: none; }
@@ -88,6 +91,7 @@
     .grid { grid-template-columns: 1fr; padding: 12px; }
     .controls { padding: 12px; }
     .filter-pills { padding: 8px 12px; }
+    .minimap { display: none; }
   }
 </style>
 </head>
@@ -106,8 +110,16 @@
 <div id="app" style="display:none">
 <div class="disclaimer">This is an unofficial community tool. Not endorsed by or affiliated with Cerebral Valley or Anthropic.</div>
 <div class="header">
-  <h1>Claude Code Hackathon <span class="count" id="total-count">0 guests</span></h1>
-  <div class="subtitle">Built with Opus 4.6 &middot; Feb 10-16, 2026 &middot; Cerebral Valley + Anthropic</div>
+  <div class="header-left">
+    <h1>Claude Code Hackathon <span class="count" id="total-count">0 guests</span></h1>
+    <div class="subtitle">Built with Opus 4.6 &middot; Feb 10-16, 2026 &middot; Cerebral Valley + Anthropic</div>
+  </div>
+  <div class="minimap" id="minimap">
+    <svg id="minimap-svg" viewBox="0 0 360 180" preserveAspectRatio="xMidYMid meet" width="340" height="170">
+      <path fill="#30363d" fill-opacity="0.45" stroke="#484f58" stroke-width="0.3" d="M84.8,18.1L98.6,22.9L94.2,23.4L86.8,28.0L87.7,32.9L100.1,38.8L101.9,27.7L106.2,27.6L124.3,37.9L113.6,39.8L108.9,43.2L114.9,40.8L115.5,43.8L116.8,44.3L118.5,44.1L119.5,43.0L120.2,44.1L103.7,50.8L99.6,64.8L95.9,59.9L86.2,60.3L82.8,69.4L92.9,68.5L91.1,74.1L96.6,74.7L97.8,81.0L118.1,79.3L117.6,80.1L122.9,84.0L128.7,85.8L129.6,90.1L145.3,97.3L139.1,111.9L126.2,124.4L121.6,123.9L109.0,143.8L104.4,136.6L109.8,109.8L98.8,96.1L101.8,81.7L99.1,82.8L76.5,71.7L65.2,58.2L70.6,66.8L67.8,65.3L55.6,49.7L57.2,41.0L45.9,31.9L29.4,28.7L21.6,34.0L15.2,35.6L23.0,31.1L13.9,28.5L19.2,25.2L11.9,24.3L23.4,18.6L83.9,22.7L85.8,20.9L84.8,18.1Z M10.1,24.0L0.0,25.0L0.0,21.0L10.1,24.0Z M64.8,16.7L78.9,20.4L60.6,18.4L64.8,16.7Z M122.8,153.5L114.3,158.0L119.2,163.7L102.0,169.2L121.8,173.2L151.5,170.3L144.2,168.3L173.1,160.9L234.5,155.8L248.9,157.9L249.9,162.3L268.0,156.2L315.1,155.3L351.2,161.7L339.8,170.9L360.0,174.7L360.0,180.0L0.0,180.0L0.9,174.1L36.9,175.0L26.4,173.7L23.2,171.1L33.6,170.3L24.7,169.1L21.6,166.9L105.1,163.9L112.6,162.5L112.7,156.9L117.0,154.6L122.8,153.5Z M175.0,31.4L181.4,38.7L174.2,39.8L175.0,31.4Z M89.8,17.8L111.2,19.5L118.1,23.1L111.1,27.7L101.4,25.4L106.7,21.9L89.8,17.8Z M148.1,7.8L167.8,8.7L160.0,9.8L160.6,15.7L153.6,19.8L157.7,19.9L140.2,24.5L136.6,29.9L128.4,26.4L129.1,20.1L121.4,14.5L106.7,12.0L119.7,8.0L159.2,7.3L148.1,7.8Z M118.2,7.4L99.4,13.8L90.5,13.5L98.2,9.5L88.4,8.1L118.2,7.4Z M229.2,102.0L227.1,114.9L224.0,115.0L224.4,106.2L229.2,102.0Z M305.2,88.6L303.3,90.6L302.6,95.6L299.4,95.4L299.8,89.8L305.2,88.6Z M296.1,94.0L289.0,89.6L297.1,83.1L299.0,89.1L296.1,94.0Z M292.8,15.0L289.4,15.8L355.7,20.1L360.0,25.0L343.5,30.1L336.8,39.0L335.9,33.2L344.5,27.4L315.1,35.3L321.4,37.8L307.5,50.2L309.1,54.9L298.0,50.8L302.4,52.5L299.2,55.1L301.7,61.8L285.9,70.2L289.3,76.6L285.2,81.4L280.1,76.6L284.2,88.7L271.4,67.2L260.3,74.1L257.5,82.0L252.6,68.6L246.4,64.6L228.0,60.0L239.8,67.7L223.5,77.4L212.4,60.1L222.7,78.3L231.0,79.4L219.2,94.7L220.8,104.7L212.2,118.8L198.4,124.1L189.4,86.3L171.0,85.2L163.4,77.8L163.0,68.1L174.1,54.2L189.5,52.6L199.1,59.7L213.8,59.0L216.2,53.3L206.2,50.5L221.7,48.0L216.7,44.8L219.1,42.7L210.7,43.4L202.5,53.6L193.1,44.3L198.5,49.8L196.1,52.0L188.9,45.6L171.1,53.1L170.6,47.0L178.6,46.0L175.4,41.3L188.1,36.5L188.5,32.9L190.9,36.0L199.7,35.6L209.1,30.0L201.3,29.3L205.4,24.9L202.2,24.3L192.9,34.6L190.4,30.5L185.7,31.4L185.0,28.0L204.5,19.0L221.1,22.5L213.2,23.4L217.0,26.2L223.5,21.4L248.5,21.9L249.9,17.0L252.4,23.8L254.7,17.2L284.4,12.3L292.8,15.0Z M232.4,17.2L237.9,14.4L248.9,13.5L237.5,19.3L232.4,17.2Z M322.5,100.7L333.6,118.1L329.4,127.8L320.6,128.0L311.3,121.5L295.0,124.2L293.7,112.5L305.7,104.2L316.5,101.9L320.2,107.7L322.5,100.7Z M310.5,90.9L327.6,96.1L330.7,100.6L317.6,98.4L310.5,90.9Z M320.3,54.9L315.1,55.4L311.0,56.1L310.7,59.0L309.4,56.7L321.4,48.6L320.3,54.9Z"/>
+      <g id="map-dots"></g>
+    </svg>
+  </div>
 </div>
 
 <div class="controls">
@@ -146,6 +158,63 @@ const SVG = {
   pin: `<svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 018 14.58a31.481 31.481 0 01-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0110 0c0 .862-.305 1.867-.834 2.94zM8 8a2 2 0 100-4 2 2 0 000 4z"/></svg>`,
   cv: `<svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.669 11.538a.498.498 0 01-.686.165c-1.879-1.147-4.243-1.407-7.028-.77a.499.499 0 01-.222-.973c3.048-.696 5.662-.396 7.77.892a.5.5 0 01.166.686zm.979-2.178a.624.624 0 01-.858.205c-2.15-1.321-5.428-1.704-7.972-.932a.625.625 0 01-.362-1.194c2.905-.881 6.517-.454 8.986 1.063a.624.624 0 01.206.858zm.084-2.268C10.154 5.56 5.9 5.419 3.438 6.166a.748.748 0 11-.434-1.432c2.825-.857 7.523-.692 10.492 1.07a.747.747 0 11-.764 1.288z"/></svg>`,
 };
+
+// Lat/lng for normalized locations (equirectangular projection)
+const GEO = {
+  "San Francisco":[37.77,-122.42],"New York":[40.71,-74.01],"United States":[39.83,-98.58],
+  "California":[36.78,-119.42],"Bangalore":[12.97,77.59],"London":[51.51,-0.13],
+  "India":[20.59,78.96],"Seattle":[47.61,-122.33],"Singapore":[1.35,103.82],
+  "Boston":[42.36,-71.06],"Los Angeles":[34.05,-118.24],"Oakland":[37.80,-122.27],
+  "Munich":[48.14,11.58],"San Francisco Bay Area":[37.56,-122.27],"Mountain View":[37.39,-122.08],
+  "Berlin":[52.52,13.41],"Vancouver":[49.28,-123.12],"San Jose":[37.34,-121.89],
+  "Romania":[45.94,24.97],"Santa Clara":[37.35,-121.96],"Poland":[51.92,19.15],
+  "Sydney":[-33.87,151.21],"Colombia":[4.57,-74.30],"United Kingdom":[55.38,-3.44],
+  "Tokyo":[35.68,139.65],"Austin":[30.27,-97.74],"Washington, DC":[38.91,-77.04],
+  "Mexico":[23.63,-102.55],"Mumbai":[19.08,72.88],"Brazil":[-14.24,-51.93],
+  "Toronto":[43.65,-79.38],"São Paulo":[-23.55,-46.63],"Cambridge, MA":[42.37,-71.11],
+  "Paris":[48.86,2.35],"Florida":[27.66,-81.52],"Edo State, Nigeria":[6.63,5.93],
+  "Tel Aviv":[32.09,34.78],"Manchester":[53.48,-2.24],"Maldives":[3.20,73.22],
+  "Jakarta":[-6.21,106.85],"Budapest":[47.50,19.04],"Irvine":[33.68,-117.83],
+  "Egypt":[26.82,30.80],"Hanover, NH":[43.70,-72.29],"Hamilton":[43.26,-79.87],
+  "Brussels":[50.85,4.35],"Philadelphia":[39.95,-75.17],"New Jersey":[40.06,-74.41],
+  "Indonesia":[-0.79,113.92],"Seoul":[37.57,126.98],"Portland":[45.52,-122.68],
+  "Oxford":[51.75,-1.26],"Kathmandu":[27.72,85.32],"Karachi":[24.86,67.00],
+  "Madrid":[40.42,-3.70],"Bucharest":[44.43,26.10],"Istanbul":[41.01,28.98],
+  "Quito":[-0.18,-78.47],"Timișoara":[45.75,21.21],"Sacramento":[38.58,-121.49],
+  "Pasadena":[34.15,-118.14],"South Korea":[35.91,127.77],"Kansas City":[39.10,-94.58],
+  "Sri Lanka":[7.87,80.77],"Dakar":[14.72,-17.47],"Alexandria, VA":[38.80,-77.05],
+  "Palo Alto":[37.44,-122.14],"Tempe, AZ":[33.43,-111.94],"Japan":[36.20,138.25],
+  "Portugal":[39.40,-8.22],"Chile":[-35.68,-71.54],"Vellore":[12.92,79.13],
+  "Miami":[25.76,-80.19],"Delft":[52.01,4.36],"Reykjavík":[64.15,-21.94],
+  "Stockholm":[59.33,18.07],"Prayagraj":[25.44,81.85],"Houston":[29.76,-95.37],
+  "Gothenburg":[57.71,11.97],"Barcelona":[41.39,2.17],"Melbourne":[-37.81,144.96],
+  "Minneapolis":[44.98,-93.27],"Estonia":[58.60,25.01],"Riyadh":[24.71,46.68],
+  "Tallinn":[59.44,24.75],"Pomona":[34.06,-117.75],"Dubai":[25.20,55.27],
+  "Delhi":[28.70,77.10],"Santiago":[-33.45,-70.67],"Baltimore":[39.29,-76.61],
+  "Pune":[18.52,73.86],"Atlanta":[33.75,-84.39],"Lisbon":[38.72,-9.14],
+  "Brisbane":[-27.47,153.03],"Orlando":[28.54,-81.38],"Dublin":[53.35,-6.26],
+  "Sunnyvale":[37.37,-122.04],
+};
+
+function renderMap() {
+  const g = document.getElementById('map-dots');
+  if (!g) return;
+  // Aggregate by normalized location
+  const counts = {};
+  for (const guest of filteredGuests) {
+    const loc = guest.locationNormalized;
+    if (loc && GEO[loc]) counts[loc] = (counts[loc] || 0) + 1;
+  }
+  let html = '';
+  for (const [loc, count] of Object.entries(counts)) {
+    const [lat, lng] = GEO[loc];
+    const x = (lng + 180);
+    const y = (90 - lat);
+    const r = Math.min(1.2 + Math.sqrt(count) * 0.9, 6);
+    html += `<circle cx="${x}" cy="${y}" r="${r}" fill="#d4775b" fill-opacity="0.7" stroke="#d4775b" stroke-width="0.3" stroke-opacity="0.4"><title>${loc}: ${count}</title></circle>`;
+  }
+  g.innerHTML = html;
+}
 
 let allGuests = [];
 let filteredGuests = [];
@@ -240,6 +309,7 @@ function applyFilters() {
 
 function render() {
   document.getElementById('total-count').textContent = `${filteredGuests.length} / ${allGuests.length} guests`;
+  renderMap();
 
   // Stats
   const statsBar = document.getElementById('stats-bar');
