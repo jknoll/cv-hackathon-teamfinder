@@ -15,6 +15,7 @@
   a { color: var(--blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
+  .disclaimer { background: #f0883e22; border-bottom: 1px solid #f0883e55; padding: 8px 24px; text-align: center; font-size: 13px; color: #f0883e; }
   .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; z-index: 100; }
   .header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
   .header h1 span.count { background: var(--accent-dim); color: var(--accent); font-size: 13px; padding: 2px 8px; border-radius: 12px; }
@@ -82,6 +83,7 @@
 </head>
 <body>
 
+<div class="disclaimer">This is an unofficial community tool. Not endorsed by or affiliated with Cerebral Valley or Anthropic.</div>
 <div class="header">
   <h1>Claude Code Hackathon <span class="count" id="total-count">0 guests</span></h1>
   <div class="subtitle">Built with Opus 4.6 &middot; Feb 10-16, 2026 &middot; Cerebral Valley + Anthropic</div>
@@ -163,7 +165,6 @@ function buildFilters() {
     { id: 'has-location', label: 'Has Location', fn: g => g.location },
     { id: 'claude-pro', label: 'Claude Code Signals', fn: g => (g.claudeCodeProficiency?.score || 0) > 0 },
     { id: 'hackathon', label: 'Hackathon History', fn: g => (g.hackathonHistory?.score || 0) > 0 },
-    { id: 'contradictions', label: 'Has Contradictions', fn: g => g.contradictions?.length > 0 },
     { id: 'high-gh', label: 'GitHub Score 50+', fn: g => (g.githubScore || 0) >= 50 },
   ];
   pillDefs.forEach(p => {
