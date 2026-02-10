@@ -74,6 +74,16 @@
   .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
   .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
 
+  .auth-gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 40px; max-width: 400px; width: 100%; text-align: center; }
+  .auth-box h2 { font-size: 18px; margin-bottom: 8px; }
+  .auth-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .auth-box input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; color: var(--text); font-size: 15px; outline: none; text-align: center; letter-spacing: 1px; }
+  .auth-box input:focus { border-color: var(--accent); }
+  .auth-box button { margin-top: 12px; width: 100%; background: var(--accent); border: none; border-radius: 6px; padding: 10px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .auth-box button:hover { opacity: 0.9; }
+  .auth-error { color: #f85149; font-size: 13px; margin-top: 10px; display: none; }
+
   @media (max-width: 768px) {
     .grid { grid-template-columns: 1fr; padding: 12px; }
     .controls { padding: 12px; }
@@ -83,6 +93,17 @@
 </head>
 <body>
 
+<div id="auth-gate" class="auth-gate">
+  <div class="auth-box">
+    <h2>Claude Code Hackathon</h2>
+    <p>Enter the password to view guest data</p>
+    <input type="password" id="auth-input" placeholder="three-word-password" autofocus>
+    <button id="auth-btn">Enter</button>
+    <div class="auth-error" id="auth-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
 <div class="disclaimer">This is an unofficial community tool. Not endorsed by or affiliated with Cerebral Valley or Anthropic.</div>
 <div class="header">
   <h1>Claude Code Hackathon <span class="count" id="total-count">0 guests</span></h1>
@@ -325,7 +346,36 @@ function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-loadData();
+// Auth gate
+const HASH = '7248dcf53ff893446699e501ee1aec2b9fdd982883fb250e2e88204eb8456311';
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function unlock(pw) {
+  const h = await sha256(pw);
+  if (h === HASH) {
+    sessionStorage.setItem('authed', '1');
+    document.getElementById('auth-gate').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    loadData();
+  } else {
+    document.getElementById('auth-error').style.display = 'block';
+    document.getElementById('auth-input').select();
+  }
+}
+
+document.getElementById('auth-btn').addEventListener('click', () => unlock(document.getElementById('auth-input').value));
+document.getElementById('auth-input').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(e.target.value); });
+
+if (sessionStorage.getItem('authed') === '1') {
+  document.getElementById('auth-gate').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  loadData();
+}
 </script>
+</div>
 </body>
 </html>
