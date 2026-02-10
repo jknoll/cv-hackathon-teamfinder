@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Hackathon - Guest Explorer</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --text-muted: #8b949e; --accent: #d4775b;
+    --accent-dim: #d4775b33; --green: #3fb950; --blue: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .header h1 span.count { background: var(--accent-dim); color: var(--accent); font-size: 13px; padding: 2px 8px; border-radius: 12px; }
+  .header .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+  .controls { padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .search { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 14px; outline: none; }
+  .search:focus { border-color: var(--accent); }
+  .search::placeholder { color: var(--text-muted); }
+
+  select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--text); font-size: 13px; cursor: pointer; }
+  select:focus { border-color: var(--accent); outline: none; }
+
+  .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 24px; }
+  .pill { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 4px 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+  .pill:hover { border-color: var(--accent); color: var(--text); }
+  .pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  .stats-bar { padding: 8px 24px; font-size: 12px; color: var(--text-muted); display: flex; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+  .stat { display: flex; align-items: center; gap: 4px; }
+  .stat .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; padding: 16px 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; transition: border-color 0.15s; }
+  .card:hover { border-color: var(--text-muted); }
+  .card-header { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+  .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--border); flex-shrink: 0; }
+  .avatar-placeholder { width: 48px; height: 48px; border-radius: 50%; background: var(--accent-dim); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
+  .name-block { flex: 1; min-width: 0; }
+  .name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .handle { font-size: 12px; color: var(--text-muted); }
+  .description { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .location-row { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .location-row .tz { opacity: 0.7; }
+
+  .links { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .link-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); transition: all 0.15s; }
+  .link-badge:hover { border-color: var(--blue); color: var(--blue); text-decoration: none; }
+  .link-badge svg { width: 12px; height: 12px; }
+
+  .scores { display: flex; gap: 8px; margin-top: 8px; }
+  .score-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .score-gh { background: #238636aa; color: #3fb950; }
+  .score-claude { background: #d4775b33; color: var(--accent); }
+  .score-hack { background: #8b5cf633; color: #a78bfa; }
+  .score-zero { opacity: 0.3; }
+
+  .contradictions { margin-top: 6px; font-size: 11px; color: #f0883e; background: #f0883e15; padding: 4px 8px; border-radius: 4px; }
+
+  .gh-details { margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+  .gh-details .repo { display: inline-block; background: var(--bg); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; margin: 1px 2px; }
+  .gh-details .repo .stars { color: #e3b341; }
+
+  .empty-state { text-align: center; padding: 60px 24px; color: var(--text-muted); }
+  .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; padding: 12px; }
+    .controls { padding: 12px; }
+    .filter-pills { padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Claude Code Hackathon <span class="count" id="total-count">0 guests</span></h1>
+  <div class="subtitle">Built with Opus 4.6 &middot; Feb 10-16, 2026 &middot; Cerebral Valley + Anthropic</div>
+</div>
+
+<div class="controls">
+  <input type="text" class="search" id="search" placeholder="Search by name, handle, location, company, bio...">
+  <select id="sort">
+    <option value="name">Sort: Name</option>
+    <option value="githubScore">Sort: GitHub Score</option>
+    <option value="claudeCode">Sort: Claude Code</option>
+    <option value="hackathon">Sort: Hackathon History</option>
+    <option value="followers">Sort: GitHub Followers</option>
+  </select>
+  <select id="filter-location">
+    <option value="">All Locations</option>
+  </select>
+  <select id="filter-tz">
+    <option value="">All Timezones</option>
+  </select>
+</div>
+
+<div class="filter-pills" id="pills"></div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="grid" id="grid"></div>
+<div class="empty-state" id="empty" style="display:none">
+  <h3>No guests match your filters</h3>
+  <p>Try adjusting your search or filters</p>
+</div>
+
+<script>
+const SVG = {
+  github: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>`,
+  linkedin: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/></svg>`,
+  x: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/></svg>`,
+  web: `<svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5H3.82zm6.853 3.472A7.024 7.024 0 0 0 13.745 12H11.91a9.27 9.27 0 0 1-.64 1.539 6.688 6.688 0 0 1-.597.933zM8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855.173-.324.33-.682.468-1.068H8.5zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.65 13.65 0 0 1-.312 2.5zm2.802-3.5a6.959 6.959 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5h2.49zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7.024 7.024 0 0 0-3.072-2.472c.218.284.418.598.597.933zM10.855 4a7.966 7.966 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4h2.355z"/></svg>`,
+  pin: `<svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 018 14.58a31.481 31.481 0 01-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0110 0c0 .862-.305 1.867-.834 2.94zM8 8a2 2 0 100-4 2 2 0 000 4z"/></svg>`,
+  cv: `<svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.669 11.538a.498.498 0 01-.686.165c-1.879-1.147-4.243-1.407-7.028-.77a.499.499 0 01-.222-.973c3.048-.696 5.662-.396 7.77.892a.5.5 0 01.166.686zm.979-2.178a.624.624 0 01-.858.205c-2.15-1.321-5.428-1.704-7.972-.932a.625.625 0 01-.362-1.194c2.905-.881 6.517-.454 8.986 1.063a.624.624 0 01.206.858zm.084-2.268C10.154 5.56 5.9 5.419 3.438 6.166a.748.748 0 11-.434-1.432c2.825-.857 7.523-.692 10.492 1.07a.747.747 0 11-.764 1.288z"/></svg>`,
+};
+
+let allGuests = [];
+let filteredGuests = [];
+
+async function loadData() {
+  const resp = await fetch('guests.jsonl');
+  const text = await resp.text();
+  allGuests = text.trim().split('\n').map(line => JSON.parse(line));
+  buildFilters();
+  applyFilters();
+}
+
+function buildFilters() {
+  // Locations
+  const locations = [...new Set(allGuests.map(g => g.locationNormalized).filter(Boolean))].sort();
+  const locSelect = document.getElementById('filter-location');
+  locations.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l; opt.textContent = l;
+    locSelect.appendChild(opt);
+  });
+
+  // Timezones
+  const tzs = [...new Set(allGuests.map(g => g.timezone).filter(Boolean))].sort();
+  const tzSelect = document.getElementById('filter-tz');
+  tzs.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t.replace(/_/g, ' ');
+    tzSelect.appendChild(opt);
+  });
+
+  // Pills
+  const pills = document.getElementById('pills');
+  const pillDefs = [
+    { id: 'has-github', label: 'Has GitHub', fn: g => g.socialAccounts?.github },
+    { id: 'has-linkedin', label: 'Has LinkedIn', fn: g => g.socialAccounts?.linkedin },
+    { id: 'has-x', label: 'Has X', fn: g => g.socialAccounts?.x },
+    { id: 'has-location', label: 'Has Location', fn: g => g.location },
+    { id: 'claude-pro', label: 'Claude Code Signals', fn: g => (g.claudeCodeProficiency?.score || 0) > 0 },
+    { id: 'hackathon', label: 'Hackathon History', fn: g => (g.hackathonHistory?.score || 0) > 0 },
+    { id: 'contradictions', label: 'Has Contradictions', fn: g => g.contradictions?.length > 0 },
+    { id: 'high-gh', label: 'GitHub Score 50+', fn: g => (g.githubScore || 0) >= 50 },
+  ];
+  pillDefs.forEach(p => {
+    const el = document.createElement('span');
+    el.className = 'pill';
+    el.textContent = p.label;
+    el.dataset.filter = p.id;
+    el.onclick = () => { el.classList.toggle('active'); applyFilters(); };
+    pills.appendChild(el);
+  });
+  window._pillDefs = pillDefs;
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const sort = document.getElementById('sort').value;
+  const locFilter = document.getElementById('filter-location').value;
+  const tzFilter = document.getElementById('filter-tz').value;
+  const activePills = [...document.querySelectorAll('.pill.active')].map(p => p.dataset.filter);
+
+  filteredGuests = allGuests.filter(g => {
+    if (q) {
+      const searchable = [
+        g.name, g.handle, g.location, g.timezone, g.description,
+        g.githubData?.bio, g.githubData?.company,
+        ...(g.githubData?.topRepos || []).map(r => r.name + ' ' + r.description + ' ' + r.language),
+        ...(g.claudeCodeProficiency?.signals || []),
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!searchable.includes(q)) return false;
+    }
+    if (locFilter && g.locationNormalized !== locFilter) return false;
+    if (tzFilter && g.timezone !== tzFilter) return false;
+    for (const pid of activePills) {
+      const def = window._pillDefs.find(p => p.id === pid);
+      if (def && !def.fn(g)) return false;
+    }
+    return true;
+  });
+
+  filteredGuests.sort((a, b) => {
+    switch (sort) {
+      case 'githubScore': return (b.githubScore || 0) - (a.githubScore || 0);
+      case 'claudeCode': return (b.claudeCodeProficiency?.score || 0) - (a.claudeCodeProficiency?.score || 0);
+      case 'hackathon': return (b.hackathonHistory?.score || 0) - (a.hackathonHistory?.score || 0);
+      case 'followers': return (b.githubData?.followers || 0) - (a.githubData?.followers || 0);
+      default: return a.name.localeCompare(b.name);
+    }
+  });
+
+  render();
+}
+
+function render() {
+  document.getElementById('total-count').textContent = `${filteredGuests.length} / ${allGuests.length} guests`;
+
+  // Stats
+  const statsBar = document.getElementById('stats-bar');
+  const withGh = filteredGuests.filter(g => g.socialAccounts?.github).length;
+  const withLoc = filteredGuests.filter(g => g.location).length;
+  const avgGhScore = filteredGuests.length > 0 ? Math.round(filteredGuests.reduce((s, g) => s + (g.githubScore || 0), 0) / filteredGuests.length) : 0;
+  statsBar.innerHTML = `
+    <span class="stat"><span class="dot" style="background:var(--green)"></span> ${withGh} with GitHub</span>
+    <span class="stat"><span class="dot" style="background:var(--blue)"></span> ${withLoc} with location</span>
+    <span class="stat"><span class="dot" style="background:var(--accent)"></span> Avg GitHub Score: ${avgGhScore}</span>
+  `;
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  if (filteredGuests.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filteredGuests.map(g => {
+    const initials = ((g.name || '?')[0] || '?').toUpperCase();
+    const avatar = g.avatarUrl
+      ? `<img class="avatar" src="${g.avatarUrl}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="avatar-placeholder" style="display:none">${initials}</div>`
+      : `<div class="avatar-placeholder">${initials}</div>`;
+
+    const links = [];
+    if (g.socialAccounts?.github) links.push(`<a href="${g.socialAccounts.github}" target="_blank" class="link-badge">${SVG.github} GitHub</a>`);
+    if (g.socialAccounts?.linkedin) links.push(`<a href="${g.socialAccounts.linkedin}" target="_blank" class="link-badge">${SVG.linkedin} LinkedIn</a>`);
+    if (g.socialAccounts?.x) links.push(`<a href="${g.socialAccounts.x}" target="_blank" class="link-badge">${SVG.x} X</a>`);
+    if (g.socialAccounts?.website) links.push(`<a href="${g.socialAccounts.website}" target="_blank" class="link-badge">${SVG.web} Website</a>`);
+    links.push(`<a href="${g.cvProfileUrl}" target="_blank" class="link-badge">${SVG.cv} CV Profile</a>`);
+
+    const locRow = g.location
+      ? `<div class="location-row">${SVG.pin} ${g.location}${g.timezone ? ` <span class="tz">(${g.timezone.replace(/_/g, ' ')})</span>` : ''}${g.locationSource === 'github' ? ' <span class="tz">via GitHub</span>' : ''}</div>`
+      : '';
+
+    const ghScore = g.githubScore != null ? g.githubScore : -1;
+    const ccScore = g.claudeCodeProficiency?.score || 0;
+    const hackScore = g.hackathonHistory?.score || 0;
+
+    const scores = `<div class="scores">
+      ${ghScore >= 0 ? `<span class="score-badge score-gh ${ghScore === 0 ? 'score-zero' : ''}">GH: ${ghScore}</span>` : ''}
+      ${ccScore > 0 ? `<span class="score-badge score-claude">Claude: ${ccScore}</span>` : ''}
+      ${hackScore > 0 ? `<span class="score-badge score-hack">Hack: ${hackScore}</span>` : ''}
+    </div>`;
+
+    const ghDetails = g.githubData && !g.githubData.error ? (() => {
+      const parts = [];
+      if (g.githubData.bio) parts.push(`<em>${escHtml(g.githubData.bio.substring(0, 100))}</em>`);
+      if (g.githubData.company) parts.push(`🏢 ${escHtml(g.githubData.company)}`);
+      parts.push(`${g.githubData.publicRepos || 0} repos · ${g.githubData.followers || 0} followers`);
+      const repos = (g.githubData.topRepos || []).filter(r => r.stars > 0).slice(0, 3);
+      if (repos.length) {
+        parts.push(repos.map(r => `<span class="repo">${escHtml(r.name)} <span class="stars">★${r.stars}</span></span>`).join(' '));
+      }
+      return `<div class="gh-details">${parts.join(' · ')}</div>`;
+    })() : '';
+
+    const claudeSignals = (g.claudeCodeProficiency?.signals || []).length > 0
+      ? `<div class="gh-details" style="color:var(--accent)">Claude signals: ${g.claudeCodeProficiency.signals.join(', ')}</div>`
+      : '';
+
+    const hackSignals = (g.hackathonHistory?.signals || []).length > 0
+      ? `<div class="gh-details" style="color:#a78bfa">Hackathon: ${g.hackathonHistory.signals.join(', ')}</div>`
+      : '';
+
+    const contraRow = (g.contradictions || []).length > 0
+      ? `<div class="contradictions">⚠️ ${g.contradictions.join('; ')}</div>`
+      : '';
+
+    const desc = g.description ? `<div class="description">${escHtml(g.description)}</div>` : '';
+
+    return `<div class="card">
+      <div class="card-header">${avatar}<div class="name-block">
+        <div class="name">${escHtml(g.name)}</div>
+        <div class="handle">@${escHtml(g.handle)}</div>
+        ${desc}
+      </div></div>
+      ${locRow}
+      <div class="links">${links.join('')}</div>
+      ${scores}
+      ${ghDetails}
+      ${claudeSignals}
+      ${hackSignals}
+      ${contraRow}
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Event listeners
+document.getElementById('search').addEventListener('input', debounce(applyFilters, 200));
+document.getElementById('sort').addEventListener('change', applyFilters);
+document.getElementById('filter-location').addEventListener('change', applyFilters);
+document.getElementById('filter-tz').addEventListener('change', applyFilters);
+
+function debounce(fn, ms) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+loadData();
+</script>
+</body>
+</html>
